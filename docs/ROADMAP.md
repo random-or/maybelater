@@ -48,20 +48,20 @@ Status: IN_PROGRESS
 
 # Phase 2 — Real Import Foundation
 
-Status: NOT_STARTED
+Status: COMPLETE
 
-- [ ] Android media/file selection
-- [ ] permission handling
-- [ ] app-managed storage
-- [ ] image validation
-- [ ] file copying
-- [ ] content hashing
-- [ ] thumbnail generation
-- [ ] persistent queue
-- [ ] bounded workers
-- [ ] duplicate handling
-- [ ] progress persistence
-- [ ] import tests
+- [x] Android media/file selection
+- [x] permission handling
+- [x] app-managed storage
+- [x] image validation
+- [x] file copying
+- [x] content hashing
+- [x] thumbnail generation
+- [x] persistent queue
+- [x] bounded workers
+- [x] duplicate handling
+- [x] progress persistence
+- [x] import tests
 
 Do not implement OCR yet unless required to verify pipeline boundaries.
 

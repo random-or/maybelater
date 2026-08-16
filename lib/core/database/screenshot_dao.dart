@@ -82,4 +82,121 @@ class ScreenshotDao {
       [query],
     );
   }
+
+  /// Find a screenshot by its content hash (for duplicate detection)
+  Future<Screenshot?> getByContentHash(String contentHash) async {
+    final db = await _dbManager.database;
+    final maps = await db.query(
+      'screenshots',
+      where: 'content_hash = ? AND is_deleted = 0',
+      whereArgs: [contentHash],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return Screenshot.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  /// Get all screenshots with a specific processing status
+  Future<List<Screenshot>> getByStatus(String status, {int? limit}) async {
+    final db = await _dbManager.database;
+    final maps = await db.query(
+      'screenshots',
+      where: 'processing_status = ? AND is_deleted = 0',
+      whereArgs: [status],
+      orderBy: 'created_at ASC',
+      limit: limit,
+    );
+    return List.generate(maps.length, (i) => Screenshot.fromMap(maps[i]));
+  }
+
+  /// Count screenshots by processing status
+  Future<int> countByStatus(String status) async {
+    final db = await _dbManager.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM screenshots WHERE processing_status = ? AND is_deleted = 0',
+      [status],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  /// Reset stale 'importing' jobs back to 'pending' for crash recovery
+  Future<int> recoverStaleJobs() async {
+    final db = await _dbManager.database;
+    return await db.update(
+      'screenshots',
+      {
+        'processing_status': 'pending',
+        'processing_error': '',
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'processing_status = ?',
+      whereArgs: ['importing'],
+    );
+  }
+
+  /// Update only the processing status and error for a screenshot
+  Future<int> updateProcessingStatus(
+    int id,
+    String status, {
+    String error = '',
+  }) async {
+    final db = await _dbManager.database;
+    return await db.update(
+      'screenshots',
+      {
+        'processing_status': status,
+        'processing_error': error,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Update import-related fields after successful processing
+  Future<int> updateImportFields(
+    int id, {
+    required String filepath,
+    required String thumbnailPath,
+    required String contentHash,
+    required int fileSize,
+    required int width,
+    required int height,
+  }) async {
+    final db = await _dbManager.database;
+    return await db.update(
+      'screenshots',
+      {
+        'filepath': filepath,
+        'thumbnail_path': thumbnailPath,
+        'content_hash': contentHash,
+        'file_size': fileSize,
+        'width': width,
+        'height': height,
+        'processing_status': 'imported',
+        'processing_error': '',
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Get total import progress counts
+  Future<Map<String, int>> getImportCounts() async {
+    final db = await _dbManager.database;
+    final result = await db.rawQuery('''
+      SELECT processing_status, COUNT(*) as count
+      FROM screenshots
+      WHERE is_deleted = 0
+      GROUP BY processing_status
+    ''');
+    final counts = <String, int>{};
+    for (final row in result) {
+      counts[row['processing_status'] as String] = row['count'] as int;
+    }
+    return counts;
+  }
 }

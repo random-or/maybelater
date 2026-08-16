@@ -154,6 +154,45 @@ Consequences: No Android emulator or Android Studio will be used on the laptop.
 
 ---
 
+## ADR-016 — Import Job Storage via Screenshots Table
+
+Status: ACCEPTED
+
+Decision: Import jobs are tracked using the existing `screenshots` table rather than a separate `import_jobs` table. A screenshot record is created at discovery time with `processing_status = 'pending'` and progresses through states as the import pipeline processes it.
+Reason: The `screenshots` table already has `processing_status`, `processing_error`, `original_uri`, `content_hash`, `thumbnail_path`, `filepath`, `file_size`, `width`, and `height` columns — all fields needed for import tracking. A separate table would duplicate this schema and require synchronization.
+Consequences: The `processing_status` column serves dual purpose as import-job state. Workers query for records by status. Stale `importing` records on app restart indicate interrupted jobs and are reset to `pending` for retry.
+
+---
+
+## ADR-017 — Media Acquisition via photo_manager
+
+Status: ACCEPTED
+
+Decision: Use the `photo_manager` package (^3.12.0) for both bulk MediaStore discovery and manual photo selection. Do not use `image_picker` as the primary import mechanism.
+Reason: ADR-009 requires bulk screenshot discovery via Android MediaStore. `photo_manager` provides direct MediaStore access with paginated asset queries, built-in permission handling (`PhotoManager.requestPermissionExtend()`), and support for Android 13+ granular permissions and Android 14+ partial access. `image_picker` only supports manual selection and cannot query MediaStore.
+Consequences: `photo_manager` handles permission requests internally. Android permissions (`READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`) are declared in the manifest but requested through photo_manager's API. The `AssetEntity` abstraction provides metadata (dimensions, size, creation date) and file access.
+
+---
+
+## ADR-018 — Processing State Machine
+
+Status: ACCEPTED
+
+Decision: The `processing_status` column uses five states derived from the import pipeline stages defined in IMPORT_PIPELINE.md:
+
+| State | Meaning |
+|-------|---------|
+| `pending` | Discovered, queued for import. Not yet picked up by a worker. |
+| `importing` | Worker is actively processing (copy → validate → hash → thumbnail). |
+| `imported` | All Phase 2 steps complete. File copied, validated, hashed, thumbnailed. Ready for OCR in Phase 3. |
+| `failed` | Processing error. `processing_error` column contains details. Retryable. |
+| `duplicate` | Content hash matches an existing imported screenshot. Source file not stored. |
+
+Reason: This is the smallest state machine that correctly supports the documented pipeline (copy → validate → hash → thumbnail), crash recovery (stale `importing` → `pending`), duplicate handling, failure/retry, and a clean Phase 3 handoff point (`imported` status).
+Consequences: On app startup, any records in `importing` state are reset to `pending` (stale job recovery). OCR in Phase 3 will process `imported` records and transition them to a new terminal state.
+
+---
+
 # Future Decisions
 
 Add new ADRs here when architecture changes materially.
