@@ -10,8 +10,10 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   });
 
-  setUp(() {
+  setUp(() async {
     dbManager = DatabaseManager();
+    await dbManager.initDatabase(pathOverride: 'test_fts5_db.sqlite');
+    await dbManager.clearAllData();
   });
 
   tearDown(() async {
