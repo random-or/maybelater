@@ -64,7 +64,7 @@ class AppTheme {
   }
 
   static TextStyle get ocrTextStyle {
-    return GoogleFonts.jetbrainsMono(
+    return GoogleFonts.jetBrainsMono(
       fontSize: 13,
       fontWeight: FontWeight.w400,
       color: AppColors.textPrimary,
