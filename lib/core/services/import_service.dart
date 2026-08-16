@@ -66,7 +66,7 @@ class ImportService {
       final assetTitle = asset.title ?? 'screenshot_${asset.id}.jpg';
 
       final screenshot = Screenshot(
-        filepath: '', // Will be resolved during processing
+        filepath: 'pending_${asset.id}', // Use unique temp path to avoid UNIQUE constraint conflicts
         originalUri: asset.id,
         filename: assetTitle,
         createdAt: asset.createDateTime.millisecondsSinceEpoch,
@@ -78,7 +78,11 @@ class ImportService {
         processingStatus: 'pending',
       );
 
-      await screenshotDao.insert(screenshot);
+      try {
+        await screenshotDao.insert(screenshot);
+      } catch (e) {
+        // If it fails to insert (e.g. duplicate ID), just skip
+      }
       // Yield to event loop periodically
       await Future<void>.delayed(Duration.zero);
     }
@@ -110,7 +114,10 @@ class ImportService {
       }
 
       final screenshot = pendingScreenshots.first;
-      if (screenshot.id == null) continue;
+      if (screenshot.id == null) {
+        // Should never happen, but prevents infinite loops
+        break;
+      }
 
       try {
         // Mark as importing
@@ -137,12 +144,13 @@ class ImportService {
           continue;
         }
 
-        final sourceFile = await asset.file;
+        // Try originFile first (Android 10+ scoped storage friendly), fallback to file
+        final sourceFile = await asset.originFile ?? await asset.file;
         if (sourceFile == null) {
           await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'failed',
-            error: 'Could not read source file',
+            error: 'Could not read source file from MediaStore',
           );
           continue;
         }
@@ -194,13 +202,17 @@ class ImportService {
           width: screenshot.width,
           height: screenshot.height,
         );
-      } catch (e) {
+      } catch (e, stack) {
         // One failed screenshot must never stop the whole import
-        await screenshotDao.updateProcessingStatus(
-          screenshot.id!,
-          'failed',
-          error: e.toString(),
-        );
+        try {
+          await screenshotDao.updateProcessingStatus(
+            screenshot.id!,
+            'failed',
+            error: '$e\\n$stack',
+          );
+        } catch (_) {
+          // Ignore inner errors to prevent crashing the queue
+        }
       }
 
       // Yield to event loop between items
