@@ -13,7 +13,7 @@ Only work on the first incomplete phase unless the user explicitly selects anoth
 
 # Phase 0 — Foundation
 
-Status: BLOCKED
+Status: COMPLETE
 
 - [x] Inspect repository/environment
 - [x] Verify Flutter/Dart versions
@@ -23,8 +23,8 @@ Status: BLOCKED
 - [x] Configure routing
 - [x] Configure Riverpod
 - [x] Create basic app shell
-- [ ] Add analyzer/lint configuration
-- [ ] Verify clean build
+- [x] Add analyzer/lint configuration
+- [x] Verify clean build (Local verification blocker bypassed using GitHub Actions cloud-build workflow; successful physical-device verification)
 
 ---
 
