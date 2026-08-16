@@ -30,19 +30,19 @@ Status: COMPLETE
 
 # Phase 1 — Database
 
-Status: NOT_STARTED
+Status: IN_PROGRESS
 
-- [ ] SQLite initialization
-- [ ] Migration system
-- [ ] screenshots table
-- [ ] collections table
-- [ ] tags table
-- [ ] screenshot_tags table
-- [ ] search_history table
-- [ ] processing/import job persistence
-- [ ] indexes
-- [ ] DAO/repository layer
-- [ ] database tests
+- [x] SQLite initialization
+- [x] Migration system
+- [x] screenshots table
+- [x] collections table
+- [x] tags table
+- [x] screenshot_tags table
+- [x] search_history table
+- [x] processing/import job persistence
+- [x] indexes
+- [x] DAO/repository layer
+- [x] database tests (Written, but local execution blocked by IPC hang)
 
 ---
 
