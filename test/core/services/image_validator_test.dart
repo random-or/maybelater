@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:maybelater/core/services/image_validator.dart';
 import 'package:path/path.dart' as p;
@@ -31,14 +32,16 @@ void main() {
     });
 
     test('returns invalid for unsupported extension', () async {
-      final file = File(p.join(tempDir.path, 'test.txt'))..writeAsStringSync('not an image');
+      final file = File(p.join(tempDir.path, 'test.txt'))
+        ..writeAsStringSync('not an image');
       final result = await validator.validateImage(file.path);
       expect(result.isValid, isFalse);
       expect(result.error, 'Unsupported file extension');
     });
 
     test('returns invalid for wrong magic number', () async {
-      final file = File(p.join(tempDir.path, 'fake.jpg'))..writeAsStringSync('123456789012345');
+      final file = File(p.join(tempDir.path, 'fake.jpg'))
+        ..writeAsStringSync('123456789012345');
       final result = await validator.validateImage(file.path);
       expect(result.isValid, isFalse);
       expect(result.error, 'Invalid file header signature');
@@ -47,8 +50,22 @@ void main() {
     test('returns valid for correct PNG magic number', () async {
       final file = File(p.join(tempDir.path, 'test.png'));
       // Write PNG magic numbers: 89 50 4E 47
-      file.writeAsBytesSync([0x89, 0x50, 0x4E, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-      
+      file.writeAsBytesSync([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+      ]);
+
       final result = await validator.validateImage(file.path);
       expect(result.isValid, isTrue);
     });
