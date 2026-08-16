@@ -33,11 +33,11 @@ class ImportProgress {
 }
 
 class ImportService {
-  final ScreenshotDao _screenshotDao;
-  final StorageService _storageService;
-  final ImageHashService _imageHashService;
-  final ImageValidator _imageValidator;
-  final ThumbnailService _thumbnailService;
+  final ScreenshotDao screenshotDao;
+  final StorageService storageService;
+  final ImageHashService imageHashService;
+  final ImageValidator imageValidator;
+  final ThumbnailService thumbnailService;
 
   final StreamController<ImportProgress> _progressController =
       StreamController<ImportProgress>.broadcast();
@@ -45,16 +45,12 @@ class ImportService {
   bool _isCancelled = false;
 
   ImportService({
-    required ScreenshotDao screenshotDao,
-    required StorageService storageService,
-    required ImageHashService imageHashService,
-    required ImageValidator imageValidator,
-    required ThumbnailService thumbnailService,
-  }) : _screenshotDao = screenshotDao,
-       _storageService = storageService,
-       _imageHashService = imageHashService,
-       _imageValidator = imageValidator,
-       _thumbnailService = thumbnailService;
+    required this.screenshotDao,
+    required this.storageService,
+    required this.imageHashService,
+    required this.imageValidator,
+    required this.thumbnailService,
+  });
 
   Stream<ImportProgress> get progressStream => _progressController.stream;
   bool get isImporting => _isImporting;
@@ -65,7 +61,7 @@ class ImportService {
     _isCancelled = false;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final screenshotDir = await _storageService.getScreenshotDirectory();
+    final screenshotDir = await storageService.getScreenshotDirectory();
 
     for (final asset in assets) {
       // Determine file extension from the asset title
@@ -73,7 +69,7 @@ class ImportService {
       final ext = p.extension(assetTitle).isNotEmpty
           ? p.extension(assetTitle)
           : '.jpg';
-      final fileName = _storageService.generateFileName(ext);
+      final fileName = storageService.generateFileName(ext);
       final targetPath = p.join(screenshotDir.path, fileName);
 
       final screenshot = Screenshot(
@@ -89,7 +85,7 @@ class ImportService {
         processingStatus: 'pending',
       );
 
-      await _screenshotDao.insert(screenshot);
+      await screenshotDao.insert(screenshot);
       // Yield to event loop periodically
       await Future<void>.delayed(Duration.zero);
     }
@@ -109,7 +105,7 @@ class ImportService {
     _isImporting = true;
 
     while (!_isCancelled) {
-      final pendingScreenshots = await _screenshotDao.getByStatus(
+      final pendingScreenshots = await screenshotDao.getByStatus(
         'pending',
         limit: 1,
       );
@@ -125,16 +121,22 @@ class ImportService {
 
       try {
         // Mark as importing
-        await _screenshotDao.updateProcessingStatus(
-          screenshot.id!,
-          'importing',
-        );
+        await screenshotDao.updateProcessingStatus(screenshot.id!, 'importing');
         await _emitProgress(isRunning: true, currentFile: screenshot.filename);
 
+        if (screenshot.originalUri == null) {
+          await screenshotDao.updateProcessingStatus(
+            screenshot.id!,
+            'failed',
+            error: 'Asset URI is missing',
+          );
+          continue;
+        }
+
         // Retrieve the original file via photo_manager
-        final asset = await AssetEntity.fromId(screenshot.originalUri);
+        final asset = await AssetEntity.fromId(screenshot.originalUri!);
         if (asset == null) {
-          await _screenshotDao.updateProcessingStatus(
+          await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'failed',
             error: 'Asset no longer available in MediaStore',
@@ -144,7 +146,7 @@ class ImportService {
 
         final sourceFile = await asset.file;
         if (sourceFile == null) {
-          await _screenshotDao.updateProcessingStatus(
+          await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'failed',
             error: 'Could not read source file',
@@ -153,16 +155,16 @@ class ImportService {
         }
 
         // Copy to app-managed storage
-        final targetFile = await _storageService.copyFileToAppStorage(
+        final targetFile = await storageService.copyFileToAppStorage(
           sourceFile,
           screenshot.filepath,
         );
 
         // Validate the copied file
-        final validation = await _imageValidator.validateImage(targetFile.path);
+        final validation = await imageValidator.validateImage(targetFile.path);
         if (!validation.isValid) {
-          await _storageService.deleteFileIfExists(targetFile.path);
-          await _screenshotDao.updateProcessingStatus(
+          await storageService.deleteFileIfExists(targetFile.path);
+          await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'failed',
             error: validation.error ?? 'Invalid image file',
@@ -171,14 +173,14 @@ class ImportService {
         }
 
         // Compute content hash for dedup
-        final contentHash = await _imageHashService.computeFileHash(
+        final contentHash = await imageHashService.computeFileHash(
           targetFile.path,
         );
-        final existing = await _screenshotDao.getByContentHash(contentHash);
+        final existing = await screenshotDao.getByContentHash(contentHash);
 
         if (existing != null) {
-          await _storageService.deleteFileIfExists(targetFile.path);
-          await _screenshotDao.updateProcessingStatus(
+          await storageService.deleteFileIfExists(targetFile.path);
+          await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'duplicate',
             error: 'Matches existing screenshot #${existing.id}',
@@ -187,10 +189,10 @@ class ImportService {
         }
 
         // Generate thumbnail
-        final thumbDir = await _storageService.getThumbnailDirectory();
-        final thumbFileName = _storageService.generateFileName('.jpg');
+        final thumbDir = await storageService.getThumbnailDirectory();
+        final thumbFileName = storageService.generateFileName('.jpg');
         final thumbPath = p.join(thumbDir.path, thumbFileName);
-        final thumbFile = await _thumbnailService.generateThumbnail(
+        final thumbFile = await thumbnailService.generateThumbnail(
           targetFile.path,
           thumbPath,
         );
@@ -198,18 +200,18 @@ class ImportService {
         final fileSize = await targetFile.length();
 
         // Update with all import fields
-        await _screenshotDao.updateImportFields(
+        await screenshotDao.updateImportFields(
           screenshot.id!,
           filepath: targetFile.path,
           thumbnailPath: thumbFile?.path ?? '',
           contentHash: contentHash,
           fileSize: fileSize,
-          width: screenshot.width ?? 0,
-          height: screenshot.height ?? 0,
+          width: screenshot.width,
+          height: screenshot.height,
         );
       } catch (e) {
         // One failed screenshot must never stop the whole import
-        await _screenshotDao.updateProcessingStatus(
+        await screenshotDao.updateProcessingStatus(
           screenshot.id!,
           'failed',
           error: e.toString(),
@@ -227,10 +229,10 @@ class ImportService {
   Future<void> retryFailed() async {
     if (_isImporting) return;
 
-    final failedScreenshots = await _screenshotDao.getByStatus('failed');
+    final failedScreenshots = await screenshotDao.getByStatus('failed');
     for (final s in failedScreenshots) {
       if (s.id != null) {
-        await _screenshotDao.updateProcessingStatus(s.id!, 'pending');
+        await screenshotDao.updateProcessingStatus(s.id!, 'pending');
       }
     }
 
@@ -246,7 +248,7 @@ class ImportService {
 
   /// On app startup, reset stale 'importing' to 'pending'.
   Future<int> recoverStaleJobs() async {
-    return await _screenshotDao.recoverStaleJobs();
+    return await screenshotDao.recoverStaleJobs();
   }
 
   Future<void> _emitProgress({
@@ -254,7 +256,7 @@ class ImportService {
     String? currentFile,
     String? lastError,
   }) async {
-    final counts = await _screenshotDao.getImportCounts();
+    final counts = await screenshotDao.getImportCounts();
 
     final completed = counts['imported'] ?? 0;
     final failed = counts['failed'] ?? 0;

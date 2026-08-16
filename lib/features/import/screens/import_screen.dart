@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import '../providers/import_provider.dart';
-import '../../../core/services/import_service.dart';
 import '../../../core/theme/app_colors.dart';
 
 class ImportScreen extends ConsumerStatefulWidget {

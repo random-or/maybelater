@@ -92,22 +92,25 @@ class ImportState {
 }
 
 /// Manages the import workflow
-class ImportNotifier extends StateNotifier<ImportState> {
-  final ImportService _importService;
-  final MediaSourceService _mediaSourceService;
-  final ScreenshotDao _screenshotDao;
+class ImportNotifier extends Notifier<ImportState> {
+  ImportService get _importService => ref.read(importServiceProvider);
+  MediaSourceService get _mediaSourceService =>
+      ref.read(mediaSourceServiceProvider);
+  ScreenshotDao get _screenshotDao => ref.read(screenshotDaoProvider);
+
   StreamSubscription<ImportProgress>? _progressSubscription;
 
-  ImportNotifier({
-    required ImportService importService,
-    required MediaSourceService mediaSourceService,
-    required ScreenshotDao screenshotDao,
-  }) : _importService = importService,
-       _mediaSourceService = mediaSourceService,
-       _screenshotDao = screenshotDao,
-       super(const ImportState()) {
+  @override
+  ImportState build() {
     _listenToProgress();
     _recoverOnStartup();
+
+    ref.onDispose(() {
+      _progressSubscription?.cancel();
+      _importService.dispose();
+    });
+
+    return const ImportState();
   }
 
   void _listenToProgress() {
@@ -263,20 +266,8 @@ class ImportNotifier extends StateNotifier<ImportState> {
       // Non-critical — don't overwrite state with error
     }
   }
-
-  @override
-  void dispose() {
-    _progressSubscription?.cancel();
-    _importService.dispose();
-    super.dispose();
-  }
 }
 
-final importNotifierProvider =
-    StateNotifierProvider<ImportNotifier, ImportState>((ref) {
-      return ImportNotifier(
-        importService: ref.watch(importServiceProvider),
-        mediaSourceService: ref.watch(mediaSourceServiceProvider),
-        screenshotDao: ref.watch(screenshotDaoProvider),
-      );
-    });
+final importNotifierProvider = NotifierProvider<ImportNotifier, ImportState>(
+  ImportNotifier.new,
+);
