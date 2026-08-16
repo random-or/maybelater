@@ -9,7 +9,6 @@ import 'package:maybelater/core/models/screenshot.dart';
 import 'package:maybelater/core/models/collection.dart';
 import 'package:maybelater/core/models/tag.dart';
 import 'package:maybelater/core/models/search_history.dart';
-import 'package:sqflite/sqflite.dart';
 
 void main() {
   late DatabaseManager dbManager;
