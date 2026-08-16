@@ -1,0 +1,15 @@
+# Flutter/Dart/Pub
+.dart_tool/
+build/
+
+# Android/Gradle
+.gradle/
+android/.gradle/
+
+# IDEs
+.idea/
+
+# Keystores and secrets (CRITICAL)
+*.jks
+*.keystore
+key.properties
