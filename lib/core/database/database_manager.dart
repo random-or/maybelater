@@ -1,4 +1,6 @@
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 
 class DatabaseManager {
@@ -22,12 +24,23 @@ class DatabaseManager {
       path = join(dbPath, databaseName);
     }
 
-    return await openDatabase(
+    if (Platform.isAndroid || Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+    }
+
+    final factory =
+        (Platform.isAndroid || Platform.isWindows || Platform.isLinux)
+        ? databaseFactoryFfi
+        : databaseFactory;
+
+    return await factory.openDatabase(
       path,
-      version: databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-      onConfigure: _onConfigure,
+      options: OpenDatabaseOptions(
+        version: databaseVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        onConfigure: _onConfigure,
+      ),
     );
   }
 
