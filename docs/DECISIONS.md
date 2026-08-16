@@ -193,6 +193,21 @@ Consequences: On app startup, any records in `importing` state are reset to `pen
 
 ---
 
+## ADR-019 — Index over Duplication (Replaces File Copying)
+
+Status: ACCEPTED (Supersedes copying requirements in ADR-012, ADR-016, and ADR-018)
+
+Decision: MaybeLater acts as an indexer of the user's existing Android MediaStore screenshots, rather than creating a second, isolated, full-resolution copy of every screenshot in app-private storage. 
+Reason: The core product goal of MaybeLater is to help the user organize and reduce their storage footprint. Creating a full physical duplicate of thousands of screenshots fundamentally conflicts with this goal. 
+Consequences: 
+- The Android MediaStore `AssetEntity.id` is the canonical identifier for a screenshot, stored in `original_uri`.
+- The database `filepath` is treated as a fast-access cache path to the MediaStore item, not an app-owned path. If unreliable, the app must resolve via `original_uri`.
+- App-private storage is used exclusively for thumbnails (to ensure instant gallery loading) and temporary processing files, never for permanent full-resolution copies.
+- Deleting a screenshot from MaybeLater triggers an Android OS-level deletion request of the original MediaStore item. A deletion is only committed to the database and thumbnail cache if the OS-level deletion succeeds.
+- Duplicate detection still uses full SHA-256 hashing.
+
+---
+
 # Future Decisions
 
 Add new ADRs here when architecture changes materially.

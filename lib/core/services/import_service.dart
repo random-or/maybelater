@@ -61,19 +61,12 @@ class ImportService {
     _isCancelled = false;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final screenshotDir = await storageService.getScreenshotDirectory();
 
     for (final asset in assets) {
-      // Determine file extension from the asset title
       final assetTitle = asset.title ?? 'screenshot_${asset.id}.jpg';
-      final ext = p.extension(assetTitle).isNotEmpty
-          ? p.extension(assetTitle)
-          : '.jpg';
-      final fileName = storageService.generateFileName(ext);
-      final targetPath = p.join(screenshotDir.path, fileName);
 
       final screenshot = Screenshot(
-        filepath: targetPath,
+        filepath: '', // Will be resolved during processing
         originalUri: asset.id,
         filename: assetTitle,
         createdAt: asset.createDateTime.millisecondsSinceEpoch,
@@ -154,16 +147,9 @@ class ImportService {
           continue;
         }
 
-        // Copy to app-managed storage
-        final targetFile = await storageService.copyFileToAppStorage(
-          sourceFile,
-          screenshot.filepath,
-        );
-
-        // Validate the copied file
-        final validation = await imageValidator.validateImage(targetFile.path);
+        // Validate the original file
+        final validation = await imageValidator.validateImage(sourceFile.path);
         if (!validation.isValid) {
-          await storageService.deleteFileIfExists(targetFile.path);
           await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'failed',
@@ -172,14 +158,13 @@ class ImportService {
           continue;
         }
 
-        // Compute content hash for dedup
+        // Compute content hash for dedup directly from original
         final contentHash = await imageHashService.computeFileHash(
-          targetFile.path,
+          sourceFile.path,
         );
         final existing = await screenshotDao.getByContentHash(contentHash);
 
         if (existing != null) {
-          await storageService.deleteFileIfExists(targetFile.path);
           await screenshotDao.updateProcessingStatus(
             screenshot.id!,
             'duplicate',
@@ -193,16 +178,16 @@ class ImportService {
         final thumbFileName = storageService.generateFileName('.jpg');
         final thumbPath = p.join(thumbDir.path, thumbFileName);
         final thumbFile = await thumbnailService.generateThumbnail(
-          targetFile.path,
+          sourceFile.path,
           thumbPath,
         );
 
-        final fileSize = await targetFile.length();
+        final fileSize = await sourceFile.length();
 
-        // Update with all import fields
+        // Update with all import fields. filepath is a cache of the external MediaStore path.
         await screenshotDao.updateImportFields(
           screenshot.id!,
-          filepath: targetFile.path,
+          filepath: sourceFile.path,
           thumbnailPath: thumbFile?.path ?? '',
           contentHash: contentHash,
           fileSize: fileSize,

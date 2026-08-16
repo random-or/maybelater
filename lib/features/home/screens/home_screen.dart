@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_photo_alternate),
-            label: 'Import',
+            label: 'Index',
           ),
         ],
       ),

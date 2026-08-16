@@ -65,4 +65,11 @@ class MediaSourceService {
 
     return [];
   }
+
+  /// Delete assets from the device (MediaStore).
+  /// This will trigger an Android OS confirmation dialog on Android 10+.
+  /// Returns a list of IDs that were successfully deleted.
+  Future<List<String>> deleteAssets(List<String> assetIds) async {
+    return await PhotoManager.editor.deleteWithIds(assetIds);
+  }
 }

@@ -7,15 +7,6 @@ import 'package:path/path.dart' as p;
 class StorageService {
   final _random = Random();
 
-  Future<Directory> getScreenshotDirectory() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dir = Directory(p.join(appDir.path, 'screenshots'));
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    return dir;
-  }
-
   Future<Directory> getThumbnailDirectory() async {
     final appDir = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(appDir.path, 'thumbnails'));
@@ -31,13 +22,6 @@ class StorageService {
     // Ensure the extension has a leading dot
     final ext = extension.startsWith('.') ? extension : '.$extension';
     return '${timestamp}_$randomSuffix$ext';
-  }
-
-  Future<File> copyFileToAppStorage(
-    File sourceFile,
-    String destinationPath,
-  ) async {
-    return await sourceFile.copy(destinationPath);
   }
 
   Future<void> deleteFileIfExists(String path) async {

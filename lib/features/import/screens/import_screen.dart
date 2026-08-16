@@ -28,7 +28,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
     final importState = ref.watch(importNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Import')),
+      appBar: AppBar(title: const Text('Index')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -134,13 +134,13 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Import Screenshots',
-              style: Theme.of(context).textTheme.titleLarge,
+              'Index Screenshots',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
-              'Discover screenshots on your device and import them '
-              'into your searchable library.',
+              'Discover and index your existing screenshots without duplicating them.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -166,7 +166,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               label: Text(
                 importState.isDiscovering
                     ? 'Discovering...'
-                    : 'Discover & Import All',
+                    : 'Discover & Index',
               ),
             ),
           ],
@@ -196,7 +196,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  progress.isRunning ? 'Importing...' : 'Import Complete',
+                  progress.isRunning ? 'Indexing...' : 'Indexing Complete',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 if (progress.isRunning)

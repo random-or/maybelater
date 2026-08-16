@@ -8,8 +8,8 @@ Import thousands of screenshots without freezing the UI, exhausting memory, dupl
 
 MediaStore Discovery / Manual Photo Picker
 → create persistent jobs
-→ copy
 → validate
+→ index
 → hash
 → thumbnail
 → OCR
@@ -21,7 +21,7 @@ MediaStore Discovery / Manual Photo Picker
 ## Permissions
 
 - Android 13+: Use Photo Picker for manual selection. If bulk discovering, handle READ_MEDIA_IMAGES gracefully.
-- Android 14+: Correctly handle partial media access (selected-photo access).
+- Android 14+: Correctly handle partial media access (selected-photo access). The app must only index media Android has actually granted access to.
 - Android 12 and below: Use legacy external storage permissions where required.
 - Do not request broad permissions when Photo Picker is sufficient.
 - Handle permission denied, partial access, revoked, and changes gracefully.
@@ -48,13 +48,24 @@ Store an error message.
 
 Support retry.
 
-## Copy
+## Indexing MediaStore
 
-Copy selected images into app-managed storage.
+Do NOT copy original images into app-managed storage.
 
-Do not permanently depend on temporary picker paths.
+The Android MediaStore (or original asset URI) is the canonical source of truth for the image.
 
-Validate before expensive processing.
+MaybeLater simply indexes these existing images to save storage space.
+
+Validate the original file before expensive processing.
+
+## Deletion Flow
+
+Because MaybeLater is an indexer that aims to reduce storage, deletion MUST be transactional with the OS.
+1. User presses Delete.
+2. App requests MediaStore deletion of the original.
+3. Android OS confirms with the user (Android 10+).
+4. If OS deletion succeeds, the app deletes the local thumbnail and updates the database.
+5. If OS deletion fails or is cancelled, the app makes NO changes.
 
 ## Hash
 
