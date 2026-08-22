@@ -84,18 +84,18 @@ Status: COMPLETE
 
 # Phase 4 — FTS5 Search
 
-Status: NOT_STARTED
+Status: COMPLETE
 
-- [ ] FTS5 table
-- [ ] synchronization
-- [ ] query normalization
-- [ ] safe query construction
-- [ ] ranking
-- [ ] snippets
-- [ ] highlighting
-- [ ] search repository
-- [ ] performance tests
-- [ ] 10k dataset test
+- [x] FTS5 table
+- [x] synchronization
+- [x] query normalization
+- [x] safe query construction
+- [x] ranking
+- [x] snippets
+- [x] highlighting
+- [x] search repository
+- [x] performance tests
+- [x] 10k dataset test
 
 ---
 
