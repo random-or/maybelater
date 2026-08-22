@@ -1,4 +1,3 @@
-
 import 'package:maybelater/core/database/database_manager.dart';
 
 class SearchResult {
@@ -71,11 +70,11 @@ class SearchDao {
 
     final queryRaw = query.trim().toLowerCase();
     final results = await db.rawQuery(sql, [normalized]);
-    
+
     final searchResults = results.map((row) {
       String snippetStr = (row['ocr_snippet'] as String?) ?? '';
       final ocrText = (row['ocr_text'] as String?)?.toLowerCase() ?? '';
-      
+
       int rankScore = 0;
       if (ocrText == queryRaw) {
         rankScore = 2; // exact
