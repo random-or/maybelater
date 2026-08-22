@@ -122,9 +122,11 @@ class ScreenshotDao {
   }
 
   /// Reset stale 'importing' jobs back to 'pending' for crash recovery
+  /// and 'ocr_processing' jobs back to 'imported'
   Future<int> recoverStaleJobs() async {
     final db = await _dbManager.database;
-    return await db.update(
+    int recovered = 0;
+    recovered += await db.update(
       'screenshots',
       {
         'processing_status': 'pending',
@@ -133,6 +135,33 @@ class ScreenshotDao {
       },
       where: 'processing_status = ?',
       whereArgs: ['importing'],
+    );
+    recovered += await db.update(
+      'screenshots',
+      {
+        'processing_status': 'imported',
+        'processing_error': '',
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'processing_status = ?',
+      whereArgs: ['ocr_processing'],
+    );
+    return recovered;
+  }
+
+  /// Update OCR text and mark as completed
+  Future<int> updateOcrText(int id, String text) async {
+    final db = await _dbManager.database;
+    return await db.update(
+      'screenshots',
+      {
+        'ocr_text': text,
+        'processing_status': 'completed',
+        'processing_error': '',
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 

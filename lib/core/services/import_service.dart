@@ -255,13 +255,16 @@ class ImportService {
   }) async {
     final counts = await screenshotDao.getImportCounts();
 
-    final completed = counts['imported'] ?? 0;
-    final failed = counts['failed'] ?? 0;
+    final completed = counts['completed'] ?? 0;
+    final failed = (counts['failed'] ?? 0) + (counts['ocr_failed'] ?? 0);
     final duplicates = counts['duplicate'] ?? 0;
-    final pending = counts['pending'] ?? 0;
-    final importing = counts['importing'] ?? 0;
+    final pending =
+        (counts['pending'] ?? 0) +
+        (counts['importing'] ?? 0) +
+        (counts['imported'] ?? 0) +
+        (counts['ocr_processing'] ?? 0);
 
-    final total = completed + failed + duplicates + pending + importing;
+    final total = completed + failed + duplicates + pending;
 
     _progressController.add(
       ImportProgress(
@@ -269,7 +272,7 @@ class ImportService {
         completed: completed,
         failed: failed,
         duplicates: duplicates,
-        pending: pending + importing,
+        pending: pending,
         isRunning: isRunning,
         currentFile: currentFile,
         lastError: lastError,

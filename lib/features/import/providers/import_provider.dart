@@ -11,6 +11,8 @@ import '../../../core/services/storage_service.dart';
 import '../../../core/services/image_hash_service.dart';
 import '../../../core/services/image_validator.dart';
 import '../../../core/services/thumbnail_service.dart';
+import '../../../core/services/ocr_service.dart';
+import '../../../core/services/ocr_worker_service.dart';
 
 // --- Singleton service providers ---
 
@@ -49,6 +51,17 @@ final importServiceProvider = Provider<ImportService>((ref) {
     imageHashService: ref.watch(imageHashServiceProvider),
     imageValidator: ref.watch(imageValidatorProvider),
     thumbnailService: ref.watch(thumbnailServiceProvider),
+  );
+});
+
+final ocrServiceProvider = Provider<OcrService>((ref) {
+  return OcrService();
+});
+
+final ocrWorkerServiceProvider = Provider<OcrWorkerService>((ref) {
+  return OcrWorkerService(
+    screenshotDao: ref.watch(screenshotDaoProvider),
+    ocrService: ref.watch(ocrServiceProvider),
   );
 });
 
@@ -94,11 +107,13 @@ class ImportState {
 /// Manages the import workflow
 class ImportNotifier extends Notifier<ImportState> {
   ImportService get _importService => ref.read(importServiceProvider);
+  OcrWorkerService get _ocrWorkerService => ref.read(ocrWorkerServiceProvider);
   MediaSourceService get _mediaSourceService =>
       ref.read(mediaSourceServiceProvider);
   ScreenshotDao get _screenshotDao => ref.read(screenshotDaoProvider);
 
   StreamSubscription<ImportProgress>? _progressSubscription;
+  StreamSubscription<void>? _ocrProgressSubscription;
 
   @override
   ImportState build() {
@@ -107,7 +122,9 @@ class ImportNotifier extends Notifier<ImportState> {
 
     ref.onDispose(() {
       _progressSubscription?.cancel();
+      _ocrProgressSubscription?.cancel();
       _importService.dispose();
+      _ocrWorkerService.dispose();
     });
 
     return const ImportState();
@@ -117,8 +134,16 @@ class ImportNotifier extends Notifier<ImportState> {
     _progressSubscription = _importService.progressStream.listen((progress) {
       state = state.copyWith(
         progress: progress,
-        isImporting: progress.isRunning,
+        isImporting: progress.isRunning || _ocrWorkerService.isProcessing,
       );
+      if (!progress.isRunning && !_ocrWorkerService.isProcessing) {
+        // If import finished but there are OCR tasks, start OCR
+        _ocrWorkerService.startProcessing();
+      }
+    });
+
+    _ocrProgressSubscription = _ocrWorkerService.progressStream.listen((_) {
+      refreshCounts();
     });
   }
 
@@ -224,10 +249,13 @@ class ImportNotifier extends Notifier<ImportState> {
 
   /// Resume processing the queue (e.g. after recovery)
   Future<void> processQueue() async {
-    if (_importService.isImporting) return;
-
     try {
-      await _importService.processQueue();
+      if (!_importService.isImporting) {
+        _importService.processQueue();
+      }
+      if (!_ocrWorkerService.isProcessing) {
+        _ocrWorkerService.startProcessing();
+      }
     } catch (e) {
       state = state.copyWith(error: 'Processing failed: $e');
     }
@@ -237,6 +265,7 @@ class ImportNotifier extends Notifier<ImportState> {
   Future<void> retryFailed() async {
     try {
       await _importService.retryFailed();
+      await _ocrWorkerService.retryFailed();
     } catch (e) {
       state = state.copyWith(error: 'Retry failed: $e');
     }
@@ -245,6 +274,7 @@ class ImportNotifier extends Notifier<ImportState> {
   /// Cancel the current import
   void cancelImport() {
     _importService.cancelImport();
+    _ocrWorkerService.cancelProcessing();
   }
 
   /// Refresh import counts from database

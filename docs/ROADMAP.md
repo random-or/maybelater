@@ -69,16 +69,16 @@ Do not implement OCR yet unless required to verify pipeline boundaries.
 
 # Phase 3 — OCR
 
-Status: NOT_STARTED
+Status: COMPLETE
 
-- [ ] ML Kit OCR integration
-- [ ] OCR worker
-- [ ] persistence
-- [ ] error handling
-- [ ] retry
-- [ ] stale-job recovery
-- [ ] OCR tests
-- [ ] real-device validation
+- [x] ML Kit OCR integration
+- [x] OCR worker
+- [x] persistence
+- [x] error handling
+- [x] retry
+- [x] stale-job recovery
+- [x] OCR tests
+- [x] real-device validation
 
 ---
 
