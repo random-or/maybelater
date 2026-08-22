@@ -33,7 +33,7 @@ class DatabaseManager {
         ? databaseFactoryFfi
         : databaseFactory;
 
-    return await factory.openDatabase(
+    _db = await factory.openDatabase(
       path,
       options: OpenDatabaseOptions(
         version: databaseVersion,
@@ -42,6 +42,7 @@ class DatabaseManager {
         onConfigure: _onConfigure,
       ),
     );
+    return _db!;
   }
 
   Future<void> _onConfigure(Database db) async {
