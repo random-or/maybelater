@@ -17,6 +17,21 @@ class ScreenshotDao {
     );
   }
 
+  Future<void> insertBatch(List<Screenshot> screenshots) async {
+    final db = await _dbManager.database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final s in screenshots) {
+        batch.insert(
+          'screenshots',
+          s.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   Future<Screenshot?> getById(int id) async {
     final db = await _dbManager.database;
     final List<Map<String, dynamic>> maps = await db.query(

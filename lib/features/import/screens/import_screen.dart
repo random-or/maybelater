@@ -178,7 +178,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
   Widget _buildProgressSection(ImportState importState) {
     final progress = importState.progress;
     final processed =
-        progress.completed + progress.failed + progress.duplicates;
+        progress.indexed +
+        progress.ocrProcessing +
+        progress.ocrCompleted +
+        progress.ocrFailed +
+        progress.failed +
+        progress.duplicates;
     final fraction = progress.total > 0 ? processed / progress.total : 0.0;
 
     return Card(
@@ -227,11 +232,30 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildStatChip(
-                  Icons.check_circle,
-                  AppColors.success,
-                  '${progress.completed} imported',
-                ),
+                if (progress.indexed > 0)
+                  _buildStatChip(
+                    Icons.check_circle_outline,
+                    AppColors.success,
+                    '${progress.indexed} indexed',
+                  ),
+                if (progress.ocrProcessing > 0)
+                  _buildStatChip(
+                    Icons.document_scanner_outlined,
+                    AppColors.accent,
+                    '${progress.ocrProcessing} OCR running',
+                  ),
+                if (progress.ocrCompleted > 0)
+                  _buildStatChip(
+                    Icons.check_circle,
+                    AppColors.success,
+                    '${progress.ocrCompleted} OCR done',
+                  ),
+                if (progress.ocrFailed > 0)
+                  _buildStatChip(
+                    Icons.error_outline,
+                    AppColors.warning,
+                    '${progress.ocrFailed} OCR failed',
+                  ),
                 if (progress.duplicates > 0)
                   _buildStatChip(
                     Icons.content_copy,

@@ -281,14 +281,33 @@ class ImportNotifier extends Notifier<ImportState> {
   Future<void> refreshCounts() async {
     try {
       final counts = await _screenshotDao.getImportCounts();
-      final total = counts.values.fold<int>(0, (sum, v) => sum + v);
+      final indexed = counts['imported'] ?? 0;
+      final ocrProcessing = counts['ocr_processing'] ?? 0;
+      final ocrCompleted = counts['completed'] ?? 0;
+      final ocrFailed = counts['ocr_failed'] ?? 0;
+      final failed = counts['failed'] ?? 0;
+      final duplicates = counts['duplicate'] ?? 0;
+      final pending = (counts['pending'] ?? 0) + (counts['importing'] ?? 0);
+
+      final total =
+          indexed +
+          ocrProcessing +
+          ocrCompleted +
+          ocrFailed +
+          failed +
+          duplicates +
+          pending;
+
       state = state.copyWith(
         progress: ImportProgress(
           total: total,
-          completed: counts['imported'] ?? 0,
-          failed: counts['failed'] ?? 0,
-          duplicates: counts['duplicate'] ?? 0,
-          pending: (counts['pending'] ?? 0) + (counts['importing'] ?? 0),
+          indexed: indexed,
+          ocrProcessing: ocrProcessing,
+          ocrCompleted: ocrCompleted,
+          ocrFailed: ocrFailed,
+          failed: failed,
+          duplicates: duplicates,
+          pending: pending,
           isRunning: _importService.isImporting,
         ),
       );

@@ -12,7 +12,10 @@ import 'thumbnail_service.dart';
 
 class ImportProgress {
   final int total;
-  final int completed;
+  final int indexed;
+  final int ocrProcessing;
+  final int ocrCompleted;
+  final int ocrFailed;
   final int failed;
   final int duplicates;
   final int pending;
@@ -22,7 +25,10 @@ class ImportProgress {
 
   const ImportProgress({
     this.total = 0,
-    this.completed = 0,
+    this.indexed = 0,
+    this.ocrProcessing = 0,
+    this.ocrCompleted = 0,
+    this.ocrFailed = 0,
     this.failed = 0,
     this.duplicates = 0,
     this.pending = 0,
@@ -62,10 +68,9 @@ class ImportService {
 
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    for (final asset in assets) {
+    final screenshots = assets.map((asset) {
       final assetTitle = asset.title ?? 'screenshot_${asset.id}.jpg';
-
-      final screenshot = Screenshot(
+      return Screenshot(
         filepath: 'pending_${asset.id}', // Use unique temp path to avoid UNIQUE constraint conflicts
         originalUri: asset.id,
         filename: assetTitle,
@@ -77,15 +82,9 @@ class ImportService {
         source: 'import',
         processingStatus: 'pending',
       );
+    }).toList();
 
-      try {
-        await screenshotDao.insert(screenshot);
-      } catch (e) {
-        // If it fails to insert (e.g. duplicate ID), just skip
-      }
-      // Yield to event loop periodically
-      await Future<void>.delayed(Duration.zero);
-    }
+    await screenshotDao.insertBatch(screenshots);
 
     _startProcessing();
   }
@@ -255,21 +254,30 @@ class ImportService {
   }) async {
     final counts = await screenshotDao.getImportCounts();
 
-    final completed = counts['completed'] ?? 0;
-    final failed = (counts['failed'] ?? 0) + (counts['ocr_failed'] ?? 0);
+    final indexed = counts['imported'] ?? 0;
+    final ocrProcessing = counts['ocr_processing'] ?? 0;
+    final ocrCompleted = counts['completed'] ?? 0;
+    final ocrFailed = counts['ocr_failed'] ?? 0;
+    final failed = counts['failed'] ?? 0;
     final duplicates = counts['duplicate'] ?? 0;
-    final pending =
-        (counts['pending'] ?? 0) +
-        (counts['importing'] ?? 0) +
-        (counts['imported'] ?? 0) +
-        (counts['ocr_processing'] ?? 0);
+    final pending = (counts['pending'] ?? 0) + (counts['importing'] ?? 0);
 
-    final total = completed + failed + duplicates + pending;
+    final total =
+        indexed +
+        ocrProcessing +
+        ocrCompleted +
+        ocrFailed +
+        failed +
+        duplicates +
+        pending;
 
     _progressController.add(
       ImportProgress(
         total: total,
-        completed: completed,
+        indexed: indexed,
+        ocrProcessing: ocrProcessing,
+        ocrCompleted: ocrCompleted,
+        ocrFailed: ocrFailed,
         failed: failed,
         duplicates: duplicates,
         pending: pending,
