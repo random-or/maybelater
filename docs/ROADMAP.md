@@ -101,16 +101,16 @@ Status: COMPLETE
 
 # Phase 5 — Gallery
 
-Status: NOT_STARTED
+Status: COMPLETE
 
-- [ ] thumbnail grid
-- [ ] lazy loading
-- [ ] sorting
-- [ ] favorites
-- [ ] multi-select
-- [ ] deletion
-- [ ] selection toolbar
-- [ ] performance validation
+- [x] thumbnail grid
+- [x] lazy loading
+- [x] sorting
+- [x] favorites
+- [x] multi-select
+- [x] deletion
+- [x] selection toolbar
+- [x] performance validation
 
 ---
 

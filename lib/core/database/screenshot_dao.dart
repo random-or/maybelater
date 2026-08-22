@@ -243,4 +243,85 @@ class ScreenshotDao {
     }
     return counts;
   }
+
+  /// Get screenshots with cursor-based pagination
+  Future<List<Screenshot>> getPaged({
+    required int limit,
+    int? lastCreatedAt,
+    int? lastId,
+    bool descending = true,
+  }) async {
+    final db = await _dbManager.database;
+
+    String whereClause = 'is_deleted = 0';
+    List<Object> whereArgs = [];
+
+    if (lastCreatedAt != null && lastId != null) {
+      if (descending) {
+        whereClause += ' AND (created_at < ? OR (created_at = ? AND id < ?))';
+      } else {
+        whereClause += ' AND (created_at > ? OR (created_at = ? AND id > ?))';
+      }
+      whereArgs.addAll([lastCreatedAt, lastCreatedAt, lastId]);
+    }
+
+    final String order = descending ? 'DESC' : 'ASC';
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'screenshots',
+      where: whereClause,
+      whereArgs: whereArgs.isEmpty ? null : whereArgs,
+      orderBy: 'created_at $order, id $order',
+      limit: limit,
+    );
+
+    return List.generate(maps.length, (i) => Screenshot.fromMap(maps[i]));
+  }
+
+  /// Toggle favorite status
+  Future<int> toggleFavorite(int id, bool isFavorite) async {
+    final db = await _dbManager.database;
+    return await db.update(
+      'screenshots',
+      {
+        'is_favorite': isFavorite ? 1 : 0,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Toggle favorite status for multiple screenshots
+  Future<int> batchToggleFavorite(List<int> ids, bool isFavorite) async {
+    if (ids.isEmpty) return 0;
+    final db = await _dbManager.database;
+    final placeholders = List.filled(ids.length, '?').join(',');
+    return await db.update(
+      'screenshots',
+      {
+        'is_favorite': isFavorite ? 1 : 0,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+  }
+
+  /// Batch soft delete
+  Future<int> batchDelete(List<int> ids) async {
+    if (ids.isEmpty) return 0;
+    final db = await _dbManager.database;
+    final placeholders = List.filled(ids.length, '?').join(',');
+    return await db.update(
+      'screenshots',
+      {
+        'is_deleted': 1,
+        'deleted_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+  }
 }
