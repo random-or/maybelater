@@ -65,12 +65,8 @@ void main() {
 
     // Measure actual elapsed query time
     final stopwatch = Stopwatch()..start();
-    final results = await searchDao.search('python error');
+    await searchDao.search('python error');
     stopwatch.stop();
-
-    print(
-      '10k dataset search took ${stopwatch.elapsedMilliseconds} ms. Found ${results.length} results.',
-    );
 
     // Verify it is under 100ms
     expect(stopwatch.elapsedMilliseconds, lessThan(100));
