@@ -7,6 +7,7 @@ import '../../features/gallery/screens/gallery_screen.dart';
 import '../../features/search/screens/search_screen.dart';
 import '../../features/import/screens/import_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/detail/screens/screenshot_detail_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey =
@@ -41,6 +42,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/detail/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final idString = state.pathParameters['id'];
+          final id = int.tryParse(idString ?? '') ?? 0;
+          return ScreenshotDetailScreen(id: id);
+        },
       ),
     ],
   );

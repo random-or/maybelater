@@ -132,17 +132,17 @@ Status: NOT_STARTED
 
 # Phase 7 — Detail
 
-Status: NOT_STARTED
+Status: IN_PROGRESS
 
-- [ ] image viewer
-- [ ] zoom
-- [ ] OCR display
-- [ ] copy OCR
-- [ ] tags
-- [ ] collections
-- [ ] favorite
-- [ ] share
-- [ ] delete
+- [x] image viewer
+- [x] zoom
+- [x] OCR display
+- [x] copy OCR
+- [x] tags
+- [x] collections
+- [x] favorite
+- [x] share
+- [x] delete
 
 ---
 

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/database/search_dao.dart';
 import '../providers/search_provider.dart';
@@ -111,7 +112,7 @@ class _SearchResultCard extends StatelessWidget {
       color: const Color(0xFF111118),
       child: InkWell(
         onTap: () {
-          // Phase 7: Open detail
+          context.push('/detail/${result.screenshotId}');
         },
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

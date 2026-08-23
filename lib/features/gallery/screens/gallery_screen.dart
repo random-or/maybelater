@@ -168,7 +168,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     .read(galleryProvider.notifier)
                     .toggleSelection(screenshot.id!);
               } else {
-                // Open detail (Phase 7 - do not implement yet)
+                context.push('/detail/${screenshot.id}');
               }
             },
             onLongPress: () {
