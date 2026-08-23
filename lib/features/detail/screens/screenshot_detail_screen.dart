@@ -53,7 +53,7 @@ class _ScreenshotDetailScreenState
             ];
           },
           loading: () => [],
-          error: (_, __) => [],
+          error: (_, _) => [],
         ),
       ),
       body: state.when(
@@ -192,7 +192,9 @@ class _ScreenshotDetailScreenState
       return;
     }
 
-    Share.shareXFiles([XFile(path)], text: 'Screenshot from MaybeLater');
+    SharePlus.instance.share(
+      ShareParams(files: [XFile(path)], text: 'Screenshot from MaybeLater'),
+    );
   }
 
   Future<void> _deleteScreenshot(Screenshot screenshot) async {
