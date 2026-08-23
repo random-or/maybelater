@@ -7,7 +7,6 @@ import 'package:maybelater/features/detail/providers/detail_provider.dart';
 import 'package:maybelater/features/import/providers/import_provider.dart';
 import 'package:maybelater/features/gallery/providers/gallery_provider.dart';
 import 'package:maybelater/features/search/providers/search_provider.dart';
-import 'package:maybelater/core/database/search_dao.dart';
 
 class MockScreenshotDao implements ScreenshotDao {
   Screenshot? mockScreenshot;
@@ -90,12 +89,14 @@ void main() {
 
     // Pre-populate gallery and search providers
     container.read(galleryProvider.notifier).updateScreenshot(screenshot);
-    container.read(searchProvider.notifier).updateScreenshot(1, isFavorite: false);
+    container
+        .read(searchProvider.notifier)
+        .updateScreenshot(1, isFavorite: false);
 
     await container.read(detailMutatorProvider).toggleFavorite(screenshot);
 
     expect(mockDao.toggleFavoriteCalled, true);
-    
+
     // NOTE: Testing actual provider state propagation requires them to have items in them
     // But since they were empty, updateScreenshot doesn't crash.
   });
@@ -104,7 +105,7 @@ void main() {
     final mockDao = MockScreenshotDao();
     final mockMediaService = MockMediaSourceService();
     mockMediaService.mockReturn = ['content://media/123'];
-    
+
     final screenshot = Screenshot(
       id: 1,
       filepath: '/test.jpg',
@@ -133,7 +134,7 @@ void main() {
     final mockDao = MockScreenshotDao();
     final mockMediaService = MockMediaSourceService();
     mockMediaService.mockReturn = []; // OS deletion failed or denied
-    
+
     final screenshot = Screenshot(
       id: 1,
       filepath: '/test.jpg',
@@ -155,7 +156,7 @@ void main() {
       () => container.read(detailMutatorProvider).delete(screenshot),
       throwsException,
     );
-    
+
     // DB delete should not be called
     expect(mockDao.deleteCalled, false);
   });
