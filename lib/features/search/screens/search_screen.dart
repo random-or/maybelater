@@ -168,6 +168,14 @@ class _SearchResultCard extends StatelessWidget {
                             color: Color(0xFF475569),
                           ),
                         ),
+                        if (result.isFavorite) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.favorite,
+                            size: 14,
+                            color: Colors.red,
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -203,6 +211,7 @@ class _SearchResultCard extends StatelessWidget {
     return Image.file(
       file,
       fit: BoxFit.cover,
+      cacheWidth: 150, // Bound decoded image size
       errorBuilder: (context, error, stackTrace) {
         return Container(
           color: const Color(0xFF1E1E2E),

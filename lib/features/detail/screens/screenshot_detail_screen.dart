@@ -216,10 +216,18 @@ class _ScreenshotDetailScreenState
       ),
     );
 
-    if (confirm == true) {
+    if (confirm != true) return;
+
+    try {
       await ref.read(detailMutatorProvider).delete(screenshot);
       if (mounted) {
         context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Delete cancelled or failed.')),
+        );
       }
     }
   }

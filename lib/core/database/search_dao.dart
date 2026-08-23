@@ -7,6 +7,7 @@ class SearchResult {
   final int? collectionId;
   final String tags;
   final int createdAt;
+  final bool isFavorite;
 
   SearchResult({
     required this.screenshotId,
@@ -15,7 +16,40 @@ class SearchResult {
     this.collectionId,
     required this.tags,
     required this.createdAt,
+    this.isFavorite = false,
   });
+
+  factory SearchResult.fromMap(Map<String, dynamic> map) {
+    return SearchResult(
+      screenshotId: map['id'] as int,
+      thumbnailPath: map['thumbnail_path'] as String?,
+      snippet: map['ocr_snippet'] as String? ?? '',
+      collectionId: map['collection_id'] as int?,
+      tags: map['manual_tags'] as String? ?? '',
+      createdAt: map['created_at'] as int,
+      isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
+    );
+  }
+
+  SearchResult copyWith({
+    int? screenshotId,
+    String? thumbnailPath,
+    String? snippet,
+    int? collectionId,
+    String? tags,
+    int? createdAt,
+    bool? isFavorite,
+  }) {
+    return SearchResult(
+      screenshotId: screenshotId ?? this.screenshotId,
+      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
+      snippet: snippet ?? this.snippet,
+      collectionId: collectionId ?? this.collectionId,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
 }
 
 class SearchDao {
@@ -59,6 +93,7 @@ class SearchDao {
         s.collection_id,
         s.manual_tags,
         s.created_at,
+        s.is_favorite,
         s.ocr_text,
         snippet(screenshots_fts, -1, '<mark>', '</mark>', '...', 15) as ocr_snippet
       FROM screenshots_fts fts

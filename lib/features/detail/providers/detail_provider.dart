@@ -26,18 +26,35 @@ class DetailMutator {
 
     await dao.toggleFavorite(current.id!, newFavoriteState);
 
-    // Invalidate so the detail screen fetches the new state
     ref.invalidate(screenshotDetailProvider(current.id!));
-    // Invalidate gallery so the heart icon updates there too
-    ref.invalidate(galleryProvider);
+
+    ref
+        .read(galleryProvider.notifier)
+        .updateScreenshot(current.copyWith(isFavorite: newFavoriteState));
+
+    ref
+        .read(searchProvider.notifier)
+        .updateScreenshot(current.id!, isFavorite: newFavoriteState);
   }
 
   Future<void> delete(Screenshot current) async {
+    if (current.originalUri != null && current.originalUri!.isNotEmpty) {
+      final mediaService = ref.read(mediaSourceServiceProvider);
+      final deletedIds = await mediaService.deleteAssets([
+        current.originalUri!,
+      ]);
+
+      // If the asset wasn't deleted (e.g. user denied the dialog or error), abort DB deletion
+      if (!deletedIds.contains(current.originalUri)) {
+        throw Exception('OS-level deletion was denied or failed.');
+      }
+    }
+
     final dao = ref.read(screenshotDaoProvider);
     await dao.delete(current.id!);
 
-    // Invalidate list providers
-    ref.invalidate(galleryProvider);
-    ref.invalidate(searchProvider);
+    // Targeted removal instead of destructive invalidation
+    ref.read(galleryProvider.notifier).removeScreenshot(current.id!);
+    ref.read(searchProvider.notifier).removeScreenshot(current.id!);
   }
 }

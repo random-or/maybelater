@@ -5,6 +5,7 @@ import 'package:photo_manager/photo_manager.dart';
 
 import '../../../core/database/database_manager.dart';
 import '../../../core/database/screenshot_dao.dart';
+import '../../gallery/providers/gallery_provider.dart';
 import '../../../core/services/import_service.dart';
 import '../../../core/services/media_source_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -142,8 +143,13 @@ class ImportNotifier extends Notifier<ImportState> {
       }
     });
 
-    _ocrProgressSubscription = _ocrWorkerService.progressStream.listen((_) {
-      refreshCounts();
+    _ocrProgressSubscription = _ocrWorkerService.progressStream.listen((
+      _,
+    ) async {
+      await refreshCounts();
+      if (!state.isImporting && !_ocrWorkerService.isProcessing) {
+        ref.read(galleryProvider.notifier).reloadCurrent();
+      }
     });
   }
 

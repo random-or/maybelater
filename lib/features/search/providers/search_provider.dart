@@ -74,6 +74,27 @@ class SearchNotifier extends Notifier<SearchState> {
     });
   }
 
+  void removeScreenshot(int id) {
+    final updatedList = state.results
+        .where((r) => r.screenshotId != id)
+        .toList();
+    if (updatedList.length != state.results.length) {
+      state = state.copyWith(results: updatedList);
+    }
+  }
+
+  void updateScreenshot(int id, {bool? isFavorite}) {
+    final index = state.results.indexWhere((r) => r.screenshotId == id);
+    if (index != -1) {
+      final updatedList = List<SearchResult>.from(state.results);
+      final current = updatedList[index];
+      updatedList[index] = current.copyWith(
+        isFavorite: isFavorite ?? current.isFavorite,
+      );
+      state = state.copyWith(results: updatedList);
+    }
+  }
+
   Future<void> _performSearch(String query) async {
     if (!_mounted) return;
 

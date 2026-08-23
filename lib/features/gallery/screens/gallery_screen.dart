@@ -262,6 +262,7 @@ class _GalleryItem extends StatelessWidget {
     return Image.file(
       file,
       fit: BoxFit.cover,
+      cacheWidth: 300, // Bound decoded image size
       errorBuilder: (context, error, stackTrace) {
         return Container(
           color: const Color(0xFF1E1E2E),

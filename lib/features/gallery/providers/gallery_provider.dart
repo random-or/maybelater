@@ -183,6 +183,46 @@ class GalleryNotifier extends Notifier<GalleryState> {
     }
   }
 
+  void removeScreenshot(int id) {
+    final updatedList = state.screenshots.where((s) => s.id != id).toList();
+    if (updatedList.length != state.screenshots.length) {
+      state = state.copyWith(screenshots: updatedList);
+    }
+  }
+
+  void updateScreenshot(Screenshot screenshot) {
+    final index = state.screenshots.indexWhere((s) => s.id == screenshot.id);
+    if (index != -1) {
+      final updatedList = List<Screenshot>.from(state.screenshots);
+      updatedList[index] = screenshot;
+      state = state.copyWith(screenshots: updatedList);
+    }
+  }
+
+  Future<void> reloadCurrent() async {
+    if (state.screenshots.isEmpty) {
+      await loadNextPage();
+      return;
+    }
+
+    final currentCount = state.screenshots.length;
+    try {
+      final dao = ref.read(screenshotDaoProvider);
+      final newScreenshots = await dao.getPaged(
+        limit: currentCount,
+        descending: state.sortMode == GallerySortMode.newestFirst,
+      );
+
+      if (!_mounted) return;
+      state = state.copyWith(
+        screenshots: newScreenshots,
+        hasMore: newScreenshots.length == currentCount ? state.hasMore : false,
+      );
+    } catch (e) {
+      // Ignored for background reload
+    }
+  }
+
   Future<void> refresh() async {
     state = state.copyWith(
       screenshots: [],
