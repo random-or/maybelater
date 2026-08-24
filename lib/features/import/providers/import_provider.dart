@@ -147,7 +147,11 @@ class ImportNotifier extends Notifier<ImportState> {
       _,
     ) async {
       await refreshCounts();
-      if (!state.isImporting && !_ocrWorkerService.isProcessing) {
+      final wasRunning = state.isImporting;
+      final isStillRunning =
+          _importService.isImporting || _ocrWorkerService.isProcessing;
+      state = state.copyWith(isImporting: isStillRunning);
+      if (wasRunning && !isStillRunning) {
         ref.read(galleryProvider.notifier).reloadCurrent();
       }
     });
